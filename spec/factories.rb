@@ -1,11 +1,5 @@
 FactoryGirl.define do
-
-  factory :entry do
-    title  "Read about thing I did. Please."
+  factory :term do
+    title  "New term"
   end
-
-  factory :author do
-    name  "Jonathon Poit"
-  end
-  
 end
