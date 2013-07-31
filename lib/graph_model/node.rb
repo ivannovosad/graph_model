@@ -20,6 +20,14 @@ module GraphModel
         
         setup_relationships
       end
+
+      def property(name, options)
+        if options.has_key? :index
+          index = options.delete :index
+          Neography::Rest.new.create_node_index("#{self.to_s.tableize}_index", index.to_s)
+        end
+        attribute name, options
+      end
       
       def default_model_options
         {}
@@ -54,8 +62,17 @@ module GraphModel
           node = Neography::Node.create(new_node.allowed_attributes)
           Neography::Rest.new.add_label node.neo_id, self.to_s
 
+
+          new_node.allowed_attributes.each_pair do |key, value|
+            Neography::Rest.new.add_to_index "#{self.to_s.tableize}_index",
+                                             key,
+                                             value,
+                                             node.neo_id
+          end
+
+
           new_node                  = build_object_from_neo4j node
-          
+
           new_node.new_attributes   = saved_related_attributes
           new_node.manage_relationships if new_node.related_attributes
         end
@@ -105,25 +122,32 @@ module GraphModel
       def run_find_by_method(attrs, *args, &block)
         # Make an array of attribute names
         attrs = attrs.split('_and_')
-
-        # #transpose will zip the two arrays together like so:
-        #   [[:a, :b, :c], [1, 2, 3]].transpose
-        #   # => [[:a, 1], [:b, 2], [:c, 3]]
+        #
+        ## #transpose will zip the two arrays together like so:
+        ##   [[:a, :b, :c], [1, 2, 3]].transpose
+        ##   # => [[:a, 1], [:b, 2], [:c, 3]]
         attrs_with_args = [attrs, args].transpose
-
-        # Hash[] will take the passed associative array and turn it
-        # into a hash like so:
-        #   Hash[[[:a, 2], [:b, 4]]] # => { :a => 2, :b => 4 }
+        #
+        ## Hash[] will take the passed associative array and turn it
+        ## into a hash like so:
+        ##   Hash[[[:a, 2], [:b, 4]]] # => { :a => 2, :b => 4 }
         conditions = Hash[attrs_with_args]
-
-        build_query = ["it.object_type == '#{self.new.class.to_s}'"]
-        
+        #
+        # build_query = ["it.object_type == '#{self.new.class.to_s}'"]
+        build_query = []
+        #
         conditions.each do |attr, value|
-          build_query.push "it.#{attr} == '#{value}'"
+          build_query.push "n.#{attr} =~ '(?i)#{value}.*'"
         end
-        query = build_query.join(" && ")
+        cond_string = build_query.join(" AND ")
 
-        Neography::Rest.new.execute_script("g.V.filter{#{query}}.id").map do |neo_id|
+        # puts "g.V.filter{#{query}}.id".color(:green)
+        #Neography::Rest.new.execute_script("g.V.filter{#{query}}.id").map do |neo_id|
+        #  build_object_from_neo4j Neography::Node.load(neo_id)
+        #end
+        cypher = "MATCH n:#{self.to_s} WHERE #{cond_string} RETURN n"
+        Neography::Rest.new.execute_query(cypher)["data"].map do |neo_id|
+          id = parse_id(neo_id.first)
           build_object_from_neo4j Neography::Node.load(neo_id)
         end
       end
