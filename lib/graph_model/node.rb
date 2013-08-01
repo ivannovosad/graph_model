@@ -194,6 +194,10 @@ module GraphModel
         !id.nil?
       end
 
+      def new_record?
+        !persisted?
+      end
+
       def to_param
         id
       end
