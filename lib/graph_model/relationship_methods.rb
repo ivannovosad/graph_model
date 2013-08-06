@@ -124,6 +124,14 @@ module GraphModel
       def relationships
         "instance relationships"
       end
+
+      def incoming_relationships
+        neo4j.rels.incoming
+      end
+
+      def outgoing_relationships
+        neo4j.rels.outgoing
+      end
       
       # the assumption here is that all relationships are many-to-many
       # as far as Neography / Neo4J is concerned this needn't be the case, but it's a good starting point
