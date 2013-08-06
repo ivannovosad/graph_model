@@ -202,6 +202,14 @@ module GraphModel
         id
       end
 
+      def incoming
+        neo4j.incoming.map { |n| self.class.build_object_from_neo4j n }
+      end
+
+      def outgoing
+        neo4j.outgoing.map { |n| self.class.build_object_from_neo4j n }
+      end
+
       def created_at
         DateTime.strptime(created_at_i.to_s, "%s")
       end
