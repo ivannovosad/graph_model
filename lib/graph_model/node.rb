@@ -145,7 +145,7 @@ module GraphModel
         #Neography::Rest.new.execute_script("g.V.filter{#{query}}.id").map do |neo_id|
         #  build_object_from_neo4j Neography::Node.load(neo_id)
         #end
-        cypher = "MATCH n:#{self.to_s} WHERE #{cond_string} RETURN n"
+        cypher = "MATCH (n:#{self.to_s}) WHERE #{cond_string} RETURN n"
         Neography::Rest.new.execute_query(cypher)["data"].map do |neo_id|
           id = parse_id(neo_id.first)
           build_object_from_neo4j Neography::Node.load(neo_id)
