@@ -137,7 +137,7 @@ module GraphModel
         build_query = []
         #
         conditions.each do |attr, value|
-          build_query.push "n.#{attr} =~ '(?i)#{value}.*'"
+          build_query.push "n.#{attr} =~ '(?i).*#{value}.*'"
         end
         cond_string = build_query.join(" AND ")
 
